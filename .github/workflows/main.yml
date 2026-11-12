@@ -1,0 +1,44 @@
+name: Update HTML and README
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-files:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Update HTML
+        if: github.actor == 'edenfdo'
+        run: |
+          sed -i '/<\/body>/i <p>Updated by edenfdo on '"$(date -u)"'</p>' index.html
+
+      - name: Update README
+        if: github.actor == 'edenfdo'
+        env:
+          CONTRIBUTOR: ${{ github.actor }}
+        run: |
+          echo "### Updated by $CONTRIBUTOR on $(date -u '+%Y-%m-%d %H:%M:%S UTC') [Commit: $(git rev-parse --short HEAD)]" >> README.md
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html README.md
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Workflow: update HTML and README"
+            git push origin main
+          fi
